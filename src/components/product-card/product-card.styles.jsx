@@ -50,5 +50,7 @@ export const ProductCardFooter = styled.div`
 
   .price {
     width: 10%;
+    display: flex;
+    justify-content: flex-end;
   }
 `;

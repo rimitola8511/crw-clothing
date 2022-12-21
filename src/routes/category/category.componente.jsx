@@ -12,8 +12,6 @@ const Category = () => {
 
   const [products, setProducts] = useState(categories[category]);
 
-  console.log(categories[category]);
-
   useEffect(() => {
     setProducts(categories[category]);
   }, [category, categories]);
