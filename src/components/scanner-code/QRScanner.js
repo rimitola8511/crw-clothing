@@ -39,7 +39,7 @@ const QRScanner = () => {
     // Start video stream and scanning
     const startVideo = () => {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({ video: { facingMode: { exact: 'environment' } } })
         .then(function (stream) {
           // Set the video source and start scanning
           video.srcObject = stream;
