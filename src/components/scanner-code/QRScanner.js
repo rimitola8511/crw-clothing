@@ -20,7 +20,7 @@ const QRScanner = () => {
     const requestCameraPermission = async () => {
       try {
         const stream = await getMediaStream({
-          video: { facingMode: 'environment' },
+          video: { facingMode: { exact: 'environment' } },
         });
         video.srcObject = stream;
         video.play();
