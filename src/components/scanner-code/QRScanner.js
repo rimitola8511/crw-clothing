@@ -19,38 +19,29 @@ const QRScanner = () => {
     // Request camera permission
     const requestCameraPermission = async () => {
       try {
-        const stream = await getMediaStream({
-          video: { facingMode: { exact: 'environment' } },
+        const permissionStatus = await navigator.permissions.query({
+          name: 'camera',
         });
-        video.srcObject = stream;
-        video.play();
-        setLoading(false);
-        requestAnimationFrame(scan);
+        if (permissionStatus.state === 'granted') {
+          startVideo();
+        } else if (permissionStatus.state === 'prompt') {
+          permissionStatus.onchange = () => {
+            if (permissionStatus.state === 'granted') {
+              startVideo();
+            }
+          };
+        }
       } catch (error) {
-        console.error('Camera access denied:', error);
+        console.error('Camera permission request error:', error);
       }
     };
 
-    // Check if navigator.mediaDevices.getUserMedia is supported
-    const getMediaStream = (constraints) => {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        return navigator.mediaDevices.getUserMedia(constraints);
-      } else if (navigator.getUserMedia) {
-        return new Promise((resolve, reject) => {
-          navigator.getUserMedia(constraints, resolve, reject);
-        });
-      } else {
-        throw new Error('getUserMedia is not supported');
-      }
-    };
-
-    if (/Android/i.test(navigator.userAgent) && !navigator.mediaDevices) {
-      // Request camera permission on Chrome for Android
-      requestCameraPermission();
-    } else {
-      // Start video stream on other browsers/devices
-      getMediaStream({ video: true })
+    // Start video stream and scanning
+    const startVideo = () => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
         .then(function (stream) {
+          // Set the video source and start scanning
           video.srcObject = stream;
           video.play();
           setLoading(false);
@@ -59,6 +50,23 @@ const QRScanner = () => {
         .catch(function (error) {
           console.error('Camera access denied:', error);
         });
+    };
+
+    // Check if getUserMedia is supported
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+      ) {
+        // Request camera permission on mobile devices
+        requestCameraPermission();
+      } else {
+        // Start video stream directly on non-mobile devices
+        startVideo();
+      }
+    } else {
+      console.error('getUserMedia is not supported');
     }
 
     video.addEventListener('loadedmetadata', updateZoneDimensions);
@@ -148,8 +156,7 @@ const QRScanner = () => {
     return () => {
       // Clean up the video stream and event listeners when the component is unmounted
       if (video.srcObject) {
-        const tracks = video.srcObject.getTracks();
-        tracks.forEach((track) => track.stop());
+        video.srcObject.getTracks().forEach((track) => track.stop());
       }
       video.removeEventListener('loadedmetadata', updateZoneDimensions);
       window.removeEventListener('resize', updateZoneDimensions);
